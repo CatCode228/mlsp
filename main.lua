@@ -74,6 +74,14 @@ function init()
 
     micro.SetStatusInfoFn("mlsp.status")
     config.MakeCommand("lsp", lspCommand, lspCompleter)
+
+    -- Enables settings configuration to be changed with set command, e.g. set lsp.error true/false while keeping user configured defaults
+    for key, value in pairs(settings.showDiagnostics) do
+    	config.RegisterCommonOption("lsp", key, value)
+    end
+
+    config.RegisterCommonOption("lsp",  "tabAutoComplete", settings.tabAutoComplete)
+    
 end
 
 local activeConnections = {}
@@ -932,7 +940,7 @@ end
 function preAutocomplete(bufpane)
     -- use micro's own autocompleter if there is no LSP connection
     if next(activeConnections) == nil then return end
-    if not settings.tabAutocomplete then return end
+    if not config.GetGlobalOption("lsp.tabAutoComplete") then return end
     if findClientWithCapability("completionProvider") == nil then return end
 
     -- "[µlsp] no autocompletions" message can be confusing if it does
@@ -1176,8 +1184,8 @@ function showDiagnostics(buf, owner, diagnostics)
 
     for _, diagnostic in pairs(diagnostics) do
         local severity = severityToString(diagnostic.severity)
-
-        if settings.showDiagnostics[severity] then
+        
+        if config.GetGlobalOption("lsp."..severity) then
             local extraInfo = nil
             if diagnostic.code ~= nil then
                 diagnostic.code = tostring(diagnostic.code)
